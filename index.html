@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>我的主頁 Dashboard</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#f5f5f7">
+<style>
+  :root{
+    --bg:#f5f5f7; --card:#ffffff; --text:#1d1d1f; --muted:#6e6e73; --line:#e5e5ea;
+    --accent:#0071e3; --up:#d70015; --down:#008a2e; --shadow:0 4px 24px rgba(0,0,0,.06);
+    --radius:20px;
+  }
+  html[data-theme="dark"]{
+    --bg:#000000; --card:#1c1c1e; --text:#f5f5f7; --muted:#98989f; --line:#2c2c2e;
+    --accent:#2997ff; --up:#ff6961; --down:#30d158; --shadow:0 4px 24px rgba(0,0,0,.4);
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  body{margin:0; background:var(--bg); color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue","PingFang TC","Microsoft JhengHei",sans-serif;}
+  .wrap{max-width:1080px; margin:0 auto; padding:28px 18px 60px;}
+  header{display:flex; justify-content:space-between; align-items:flex-end; gap:12px; margin-bottom:20px;}
+  .greet{font-size:30px; font-weight:700; letter-spacing:-.02em;}
+  .dateline{color:var(--muted); font-size:15px; margin-top:4px;}
+  .clockbox{text-align:right;}
+  .clock{font-size:30px; font-weight:600; font-variant-numeric:tabular-nums; letter-spacing:-.01em;}
+  .clocksub{color:var(--muted); font-size:13px;}
+  .gear{background:var(--card); border:1px solid var(--line); color:var(--text); border-radius:999px;
+    padding:8px 14px; font-size:14px; cursor:pointer; box-shadow:var(--shadow);}
+  .grid{display:grid; grid-template-columns:repeat(3,1fr); gap:16px;}
+  @media (max-width:980px){ .grid{grid-template-columns:repeat(2,1fr);} }
+  @media (max-width:640px){ .grid{grid-template-columns:1fr;} .card{aspect-ratio:auto !important;} .greet{font-size:24px;} .clock{font-size:24px;} }
+  .card{background:var(--card); border-radius:var(--radius); box-shadow:var(--shadow);
+    padding:18px 18px 14px; border:1px solid var(--line); aspect-ratio:1/1; overflow:hidden;
+    display:flex; flex-direction:column;}
+  .card > div[id^="c-"]{flex:1; min-height:0; overflow-y:auto;}
+  .cardhead{display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;}
+  .cardtitle{font-size:13px; font-weight:600; color:var(--muted); text-transform:uppercase; letter-spacing:.06em;}
+  .refresh{background:none; border:none; cursor:pointer; color:var(--accent); font-size:16px; padding:2px 4px; line-height:1;}
+  .refresh.spin{animation:spin .8s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .big{font-size:44px; font-weight:700; letter-spacing:-.02em; line-height:1.05;}
+  .sub{color:var(--muted); font-size:14px; margin-top:6px; line-height:1.5;}
+  .updated{margin-top:auto; padding-top:10px; font-size:11px; color:var(--muted);}
+  .err{color:var(--up); font-size:13px;}
+  .rows{display:flex; flex-direction:column;}
+  .row{display:flex; justify-content:space-between; align-items:baseline; padding:7px 0; border-bottom:1px solid var(--line);}
+  .row:last-child{border-bottom:none;}
+  .row .k{font-size:15px;}
+  .row .v{font-size:15px; font-weight:600; font-variant-numeric:tabular-nums; text-align:right;}
+  .row .v small{display:block; font-weight:400; color:var(--muted); font-size:12px;}
+  .pos{color:var(--up);} .neg{color:var(--down);} /* 港股習慣：升紅跌綠 */
+  .fc{display:grid; grid-template-columns:repeat(3,1fr); gap:4px; text-align:center;}
+  .mk .row .v small.pos{color:#008a2e;} .mk .row .v small.neg{color:#d70015;} /* 指數：升綠跌紅 */
+  html[data-theme="dark"] .mk .row .v small.pos{color:#30d158;}
+  html[data-theme="dark"] .mk .row .v small.neg{color:#ff6961;}
+  .mk .row{padding:5px 0;}
+  .mk .row .k{font-size:14px;}
+  .mk .row .v{font-size:14px;}
+  .mk .row .v small{display:inline; margin-left:6px; font-size:12px;}
+  .fc .d{padding:4px 2px; border-radius:12px; background:var(--bg);}
+  .fc .dow{font-size:10px; color:var(--muted);}
+  .fc .ic{font-size:16px; line-height:1.3;}
+  .fc .hi{font-size:12px; font-weight:600;}
+  .fc .lo{font-size:11px; color:var(--muted);}
+  .fc .pp{font-size:9px; color:var(--accent);}
+  .sunbar{height:8px; border-radius:99px; background:var(--line); margin:14px 0 6px; position:relative; overflow:hidden;}
+  .sunbar i{position:absolute; left:0; top:0; bottom:0; background:linear-gradient(90deg,#ffb340,#ff9500); border-radius:99px;}
+  .count{font-size:44px; font-weight:700;}
+  .count small{font-size:16px; font-weight:600; color:var(--muted);}
+  .settings{background:var(--card); border:1px solid var(--line); border-radius:var(--radius);
+    box-shadow:var(--shadow); padding:18px; margin-bottom:16px; display:none;}
+  .settings.open{display:block;}
+  .settings h3{margin:0 0 12px; font-size:16px;}
+  .srow{display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid var(--line); font-size:15px;}
+  .srow:last-child{border-bottom:none;}
+  .srow input[type=text]{font-size:15px; padding:6px 10px; border:1px solid var(--line); border-radius:8px;
+    background:var(--bg); color:var(--text); width:150px;}
+  .seg{display:inline-flex; background:var(--bg); border-radius:9px; padding:2px;}
+  .seg button{border:none; background:none; padding:5px 12px; font-size:14px; border-radius:7px; cursor:pointer; color:var(--text);}
+  .seg button.on{background:var(--card); box-shadow:0 1px 4px rgba(0,0,0,.15); font-weight:600;}
+  .chk{display:flex; gap:12px; flex-wrap:wrap;}
+  .chk label{font-size:14px; display:flex; gap:5px; align-items:center;}
+  footer{color:var(--muted); font-size:12px; text-align:center; margin-top:22px; line-height:1.7;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <div class="greet" id="greet">你好</div>
+      <div class="dateline" id="dateline">—</div>
+    </div>
+    <div style="display:flex; align-items:flex-end; gap:10px;">
+      <div class="clockbox">
+        <div class="clock" id="clock">--:--</div>
+        <div class="clocksub">溫哥華時間</div>
+      </div>
+      <button class="gear" id="gearBtn" title="設定">⚙ 設定</button>
+    </div>
+  </header>
+
+  <div class="settings" id="settingsPanel">
+    <h3>個人設定（會記住）</h3>
+    <div class="srow"><span>顯示名稱</span><input type="text" id="setName" placeholder="Marco"></div>
+    <div class="srow"><span>溫度單位</span>
+      <span class="seg" id="setUnit"><button data-v="c">°C</button><button data-v="f">°F</button></span></div>
+    <div class="srow"><span>時鐘制式</span>
+      <span class="seg" id="setHour"><button data-v="24">24 小時</button><button data-v="12">12 小時</button></span></div>
+    <div class="srow"><span>外觀</span>
+      <span class="seg" id="setTheme"><button data-v="auto">自動</button><button data-v="light">淺色</button><button data-v="dark">深色</button></span></div>
+    <div class="srow"><span>顯示卡片</span>
+      <span class="chk" id="setCards"></span></div>
+  </div>
+
+  <div class="grid" id="grid">
+    <section class="card" data-card="weather">
+      <div class="cardhead"><span class="cardtitle">今日天氣 · 列治文</span><button class="refresh" data-r="weather">⟳</button></div>
+      <div id="c-weather"><div class="sub">載入中…</div></div>
+      <div class="updated" id="u-weather"></div>
+    </section>
+    <section class="card" data-card="forecast">
+      <div class="cardhead"><span class="cardtitle">九日天氣預報 · 列治文</span><button class="refresh" data-r="weather">⟳</button></div>
+      <div id="c-forecast"><div class="sub">載入中…</div></div>
+      <div class="updated" id="u-forecast"></div>
+    </section>
+    <section class="card" data-card="sun">
+      <div class="cardhead"><span class="cardtitle">日出日落 · 列治文</span><button class="refresh" data-r="weather">⟳</button></div>
+      <div id="c-sun"><div class="sub">載入中…</div></div>
+      <div class="updated" id="u-sun"></div>
+    </section>
+    <section class="card" data-card="holiday">
+      <div class="cardhead"><span class="cardtitle">BC 公眾假期倒數</span><button class="refresh" data-r="holiday">⟳</button></div>
+      <div id="c-holiday"><div class="sub">載入中…</div></div>
+      <div class="updated" id="u-holiday"></div>
+    </section>
+    <section class="card" data-card="fx">
+      <div class="cardhead"><span class="cardtitle">港幣匯率</span><button class="refresh" data-r="fx">⟳</button></div>
+      <div id="c-fx"><div class="sub">載入中…</div></div>
+      <div class="updated" id="u-fx"></div>
+    </section>
+    <section class="card" data-card="markets">
+      <div class="cardhead"><span class="cardtitle">環球市場</span><button class="refresh" data-r="markets">⟳</button></div>
+      <div id="c-markets"><div class="sub">載入中…</div></div>
+      <div class="updated" id="u-markets"></div>
+    </section>
+  </div>
+
+  <footer>資料來源：Open-Meteo（天氣）· Frankfurter（匯率）· CNBC（市場，Yahoo Finance / Stooq 後備）<br>每 60 秒自動更新；每張卡亦可手動更新。</footer>
+</div>
+
+<script>
+"use strict";
+const TZ = "America/Vancouver";
+const LAT = 49.1666, LON = -123.1336;
+const $ = s => document.querySelector(s);
+
+/* ---------- 設定（localStorage） ---------- */
+const DEF = { name:"Marco", unit:"c", hour:"24", theme:"auto",
+  cards:{weather:true, forecast:true, fx:true, holiday:true, sun:true, markets:true} };
+let S;
+try { S = Object.assign({}, DEF, JSON.parse(localStorage.getItem("dashboard-settings-v1")||"{}"));
+      S.cards = Object.assign({}, DEF.cards, S.cards||{}); }
+catch(e){ S = JSON.parse(JSON.stringify(DEF)); }
+function save(){ try{ localStorage.setItem("dashboard-settings-v1", JSON.stringify(S)); }catch(e){} }
+function applyTheme(){
+  const dark = S.theme==="dark" || (S.theme==="auto" && matchMedia("(prefers-color-scheme: dark)").matches);
+  document.documentElement.dataset.theme = dark ? "dark" : "light";
+}
+function applyCards(){
+  document.querySelectorAll("[data-card]").forEach(el=>{
+    el.style.display = S.cards[el.dataset.card] ? "" : "none";
+  });
+}
+
+/* ---------- 時鐘 ---------- */
+function tick(){
+  const now = new Date();
+  const tfmt = new Intl.DateTimeFormat("zh-HK",{timeZone:TZ, hour:"2-digit", minute:"2-digit", second:"2-digit", hour12:S.hour==="12"});
+  $("#clock").textContent = tfmt.format(now);
+  const dfmt = new Intl.DateTimeFormat("zh-HK",{timeZone:TZ, year:"numeric", month:"long", day:"numeric", weekday:"long"});
+  $("#dateline").textContent = dfmt.format(now) + " · 列治文， BC";
+  const h = Number(new Intl.DateTimeFormat("en-CA",{timeZone:TZ, hour:"2-digit", hour12:false}).format(now));
+  const g = h<6 ? "夜深了" : h<12 ? "早晨" : h<18 ? "午安" : "晚安";
+  $("#greet").textContent = g + (S.name ? "，" + S.name : "");
+}
+setInterval(tick, 1000);
+
+/* ---------- 工具 ---------- */
+function stamp(id){ const el=$(id); if(el) el.textContent = "更新： " +
+  new Intl.DateTimeFormat("zh-HK",{timeZone:TZ, hour:"2-digit", minute:"2-digit", second:"2-digit", hour12:false}).format(new Date()); }
+function temp(c){ return S.unit==="f" ? Math.round(c*9/5+32)+"°F" : Math.round(c)+"°C"; }
+async function getJSON(url){ const r = await fetch(url); if(!r.ok) throw new Error(r.status); return r.json(); }
+
+/* ---------- 天氣（Open-Meteo） ---------- */
+const WMO = {0:["晴朗","☀️"],1:["大致晴朗","🌤️"],2:["部分多雲","⛅"],3:["多雲","☁️"],
+  45:["有霧","🌫️"],48:["霧凇","🌫️"],51:["毛毛雨","🌦️"],53:["毛毛雨","🌦️"],55:["毛毛雨","🌦️"],
+  61:["落雨","🌧️"],63:["落雨","🌧️"],65:["大雨","🌧️"],66:["凍雨","🌧️"],67:["凍雨","🌧️"],
+  71:["落雪","🌨️"],73:["落雪","🌨️"],75:["大雪","❄️"],77:["雪粒","🌨️"],
+  80:["驟雨","🌦️"],81:["驟雨","🌦️"],82:["暴雨","⛈️"],85:["雪驟","🌨️"],86:["雪驟","🌨️"],
+  95:["雷暴","⛈️"],96:["雷暴冰雹","⛈️"],99:["雷暴冰雹","⛈️"]};
+const wmo = c => WMO[c] || ["多雲","☁️"];
+function fmtTime(iso){ return new Intl.DateTimeFormat("zh-HK",{timeZone:TZ, hour:"2-digit", minute:"2-digit", hour12:false})
+  .format(new Date(iso)); }
+async function loadWeather(){
+  const url = "https://api.open-meteo.com/v1/forecast?latitude="+LAT+"&longitude="+LON+
+    "&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m"+
+    "&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,sunrise,sunset"+
+    "&forecast_days=9&timezone="+encodeURIComponent(TZ);
+  const d = await getJSON(url);
+  const cur = d.current, day = d.daily, [label, icon] = wmo(cur.weather_code);
+  $("#c-weather").innerHTML =
+    '<div class="big">'+icon+" "+temp(cur.temperature_2m)+"</div>"+
+    '<div class="sub">'+label+" · 體感 "+temp(cur.apparent_temperature)+"<br>"+
+    "今日 "+temp(day.temperature_2m_max[0])+" / "+temp(day.temperature_2m_min[0])+
+    " · 濕度 "+cur.relative_humidity_2m+"% · 風速 "+Math.round(cur.wind_speed_10m)+" km/h<br>"+
+    "降雨機會 "+(day.precipitation_probability_max[0] ?? "—")+"%</div>";
+  /* 日出日落 */
+  const sr = new Date(day.sunrise[0]), ss = new Date(day.sunset[0]), now = new Date();
+  const dayLen = ss - sr, pct = Math.max(0, Math.min(100, (now - sr)/dayLen*100));
+  const lenH = Math.floor(dayLen/3.6e6), lenM = Math.round(dayLen%3.6e6/6e4);
+  $("#c-sun").innerHTML =
+    '<div class="rows"><div class="row"><span class="k">🌅 日出</span><span class="v">'+fmtTime(day.sunrise[0])+'</span></div>'+
+    '<div class="row"><span class="k">🌇 日落</span><span class="v">'+fmtTime(day.sunset[0])+'</span></div></div>'+
+    '<div class="sunbar"><i style="width:'+pct+'%"></i></div>'+
+    '<div class="sub">日照長度 '+lenH+" 小時 "+lenM+" 分鐘</div>";
+  /* 九日預報 */
+  const dowFmt = new Intl.DateTimeFormat("zh-HK",{timeZone:TZ, weekday:"short"});
+  let cells = "";
+  for(let i=0;i<day.time.length;i++){
+    const dt = new Date(day.time[i]+"T12:00:00");
+    const [,ic] = wmo(day.weather_code[i]);
+    cells += '<div class="d"><div class="dow">'+(i===0?"今日":dowFmt.format(dt))+"</div>"+
+      '<div class="ic">'+ic+'</div><div class="hi">'+temp(day.temperature_2m_max[i])+"</div>"+
+      '<div class="lo">'+temp(day.temperature_2m_min[i])+"</div>"+
+      '<div class="pp">'+(day.precipitation_probability_max[i] ?? "—")+"%</div></div>";
+  }
+  $("#c-forecast").innerHTML = '<div class="fc">'+cells+"</div>";
+  stamp("#u-weather"); stamp("#u-sun"); stamp("#u-forecast");
+}
+
+/* ---------- 匯率（Frankfurter，後備 open.er-api） ---------- */
+async function loadFX(){
+  let d;
+  try{ d = await getJSON("https://api.frankfurter.dev/v1/latest?base=HKD&symbols=CAD,JPY,GBP"); }
+  catch(e){ const x = await getJSON("https://open.er-api.com/v6/latest/HKD");
+    d = { date:(x.time_last_update_utc||"").slice(0,16), rates:{CAD:x.rates.CAD, JPY:x.rates.JPY, GBP:x.rates.GBP} }; }
+  const r = d.rates;
+  const row = (flag, name, code, v, dec) =>
+    '<div class="row"><span class="k">'+flag+" "+name+'</span><span class="v">'+v.toFixed(dec)+
+    "<small>100 港幣 = "+(v*100).toFixed(dec===4?2:1)+" "+code+"</small></span></div>";
+  $("#c-fx").innerHTML = '<div class="rows">'+
+    row("🇨🇦","加幣 CAD","CAD", r.CAD, 4)+
+    row("🇯🇵","日圓 JPY","JPY", r.JPY, 2)+
+    row("🇬🇧","英磅 GBP","GBP", r.GBP, 4)+"</div>"+
+    '<div class="sub">1 港幣兌換 · 歐洲央行參考匯率（'+d.date+"）</div>";
+  stamp("#u-fx");
+}
+
+/* ---------- BC 公眾假期 ---------- */
+function easter(y){ const a=y%19,b=Math.floor(y/100),c=y%100,d=Math.floor(b/4),e=b%4,
+  f=Math.floor((b+8)/25),g=Math.floor((b-f+1)/3),h=(19*a+b-d-g+15)%30,i=Math.floor(c/4),k=c%4,
+  l=(32+2*e+2*i-h-k)%7,m=Math.floor((a+11*h+22*l)/451),mo=Math.floor((h+l-7*m+114)/31),
+  da=((h+l-7*m+114)%31)+1; return new Date(y, mo-1, da); }
+function nthDow(y, m, dow, n){ const d = new Date(y, m, 1);
+  d.setDate(1 + ((dow - d.getDay() + 7)%7) + (n-1)*7); return d; }
+function lastDowOnOrBefore(y, m, day, dow){ const d = new Date(y, m, day);
+  d.setDate(day - ((d.getDay() - dow + 7)%7)); return d; }
+function bcHolidays(y){
+  const gf = easter(y); gf.setDate(gf.getDate()-2);
+  return [
+    ["元旦", new Date(y,0,1)], ["家庭日", nthDow(y,1,1,3)], ["耶穌受難日", gf],
+    ["維多利亞日", lastDowOnOrBefore(y,4,24,1)], ["加拿大國慶日", new Date(y,6,1)],
+    ["BC 日", nthDow(y,7,1,1)], ["勞動節", nthDow(y,8,1,1)],
+    ["全國真相與和解日", new Date(y,8,30)], ["感恩節", nthDow(y,9,1,2)],
+    ["國殤紀念日", new Date(y,10,11)], ["聖誕節", new Date(y,11,25)], ["節禮日", new Date(y,11,26)]
+  ].map(([n,d])=>({name:n, date:d}));
+}
+function loadHoliday(){
+  const now = new Date(); const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const all = [...bcHolidays(today.getFullYear()), ...bcHolidays(today.getFullYear()+1)]
+    .filter(h => h.date >= today).sort((a,b)=>a.date-b.date);
+  const nx = all[0], days = Math.round((nx.date - today)/864e5);
+  const fmt = new Intl.DateTimeFormat("zh-HK",{month:"long", day:"numeric", weekday:"short"});
+  let rows = "";
+  all.slice(1,4).forEach(h=>{ const dd = Math.round((h.date - today)/864e5);
+    rows += '<div class="row"><span class="k">'+h.name+'</span><span class="v">'+fmt.format(h.date)+
+      "<small>仲有 "+dd+" 日</small></span></div>"; });
+  $("#c-holiday").innerHTML =
+    '<div class="count">'+days+' <small>日</small></div>'+
+    '<div class="sub">下一個假期：<b>'+nx.name+"</b>（"+fmt.format(nx.date)+"）</div>"+
+    '<div class="rows" style="margin-top:6px;">'+rows+"</div>";
+  stamp("#u-holiday");
+}
+
+/* ---------- 市場（Yahoo via 公開中轉，Stooq 後備） ---------- */
+const MK = [
+  {label:"恒生指數", y:"^HSI", s:"^hsi", c:".HSI", dec:2},
+  {label:"標普 500", y:"^GSPC", s:"^spx", c:".SPX", dec:2},
+  {label:"納斯達克 100", y:"^NDX", s:"^ndx", c:".NDX", dec:2},
+  {label:"道瓊斯指數", y:"^DJI", s:"^dji", c:".DJI", dec:2},
+  {label:"黃金（美元／盎司）", y:"GC=F", s:"xauusd", c:"@GC.1", dec:2}
+];
+const PROXIES = [
+  u => "https://api.allorigins.win/raw?url="+encodeURIComponent(u),
+  u => "https://api.codetabs.com/v1/proxy?quest="+encodeURIComponent(u),
+  u => "https://corsproxy.io/?url="+encodeURIComponent(u),
+  u => "https://api.cors.lol/?url="+encodeURIComponent(u)
+];
+function fetchT(url, ms){
+  const ctl = new AbortController(); const t = setTimeout(()=>ctl.abort(), ms||9000);
+  return fetch(url, {signal: ctl.signal}).finally(()=>clearTimeout(t));
+}
+async function viaProxy(url){
+  /* 三個中轉同時競賽，邊個最快成功用邊個，避免單一中轉 hang 住成張卡 */
+  const tries = PROXIES.map(p => fetchT(p(url), 9000).then(r=>{ if(!r.ok) throw new Error(r.status); return r; }));
+  if(Promise.any) return Promise.any(tries);
+  let lastErr; for(const t of tries){ try{ return await t; }catch(e){ lastErr = e; } } throw lastErr;
+}
+const QKEY = "dash-quotes-v1";
+function getCache(){ try{ return JSON.parse(localStorage.getItem(QKEY)||"null"); }catch(e){ return null; } }
+function setCache(c){ try{ localStorage.setItem(QKEY, JSON.stringify(c)); }catch(e){} }
+function renderMarkets(q, note){
+  const rows = MK.map(m=>{
+    const d = q[m.y];
+    if(!d) return '<div class="row"><span class="k">'+m.label+'</span><span class="v">—</span></div>';
+    const chg = d.p - d.pc, pct = d.pc ? chg/d.pc*100 : 0, cls = chg>=0?"pos":"neg", ar = chg>=0?"▲":"▼";
+    return '<div class="row"><span class="k">'+m.label+'</span><span class="v">'+
+      d.p.toLocaleString("en-US",{minimumFractionDigits:m.dec, maximumFractionDigits:m.dec})+
+      '<small class="'+cls+'">'+ar+" "+Math.abs(chg).toLocaleString("en-US",{maximumFractionDigits:2})+
+      " ("+Math.abs(pct).toFixed(2)+"%)</small></span></div>";
+  });
+  $("#c-markets").innerHTML = '<div class="rows mk">'+rows.join("")+"</div>"+
+    '<div class="sub">'+(note||"升跌以對上一個交易日收市計；休市時顯示最近收市。")+"</div>";
+}
+async function yahooBatch(){
+  const syms = MK.map(m=>m.y).join(",");
+  const u = "https://query1.finance.yahoo.com/v7/finance/quote?symbols="+encodeURIComponent(syms);
+  const r = await viaProxy(u); const j = await r.json();
+  const list = j && j.quoteResponse && j.quoteResponse.result;
+  if(!list || !list.length) throw new Error("no data");
+  const out = {};
+  list.forEach(q=>{ if(q.regularMarketPrice) out[q.symbol] = { p: q.regularMarketPrice, pc: q.regularMarketPreviousClose || q.regularMarketPrice }; });
+  if(!Object.keys(out).length) throw new Error("empty");
+  return out;
+}
+async function yahooQuote(sym){
+  const target = "https://query1.finance.yahoo.com/v8/finance/chart/"+encodeURIComponent(sym)+"?range=1d&interval=1d";
+  let r;
+  try{ r = await fetchT(target, 8000); if(!r.ok) throw new Error(r.status); }
+  catch(e){ r = await viaProxy(target); }
+  const d = await r.json();
+  const m = d.chart.result[0].meta;
+  return { price:m.regularMarketPrice, prev:m.chartPreviousClose };
+}
+async function stooqClose(){
+  const r = await viaProxy("https://stooq.com/q/l/?s="+MK.map(m=>m.s).join(",")+"&f=sd2t2ohlcv&h&e=csv");
+  const txt = await r.text(); const out = {};
+  txt.trim().split("\n").slice(1).forEach(line=>{ const p = line.split(",");
+    out[p[0].toLowerCase()] = parseFloat(p[6]); });
+  return out;
+}
+function cnbcNum(v){ if(v==null) return NaN; const n = parseFloat(String(v).replace(/[,%+]/g,"")); return isNaN(n) ? NaN : n; }
+async function cnbcQuotes(){
+  const syms = MK.map(m=>m.c).join("|");
+  const u = "https://quote.cnbc.com/quote-html-webservice/restQuote/symbolType/symbol?symbols="+
+    encodeURIComponent(syms)+"&requestMethod=itv&noform=1&partnerId=2&fund=1&exthrs=1&output=json";
+  let r;
+  try{ r = await fetchT(u, 9000); if(!r.ok) throw new Error(r.status); }
+  catch(e){ r = await viaProxy(u); }
+  const j = await r.json();
+  const arr = (j.FormattedQuoteResult && j.FormattedQuoteResult.FormattedQuote) || j.FormattedQuote || [];
+  const out = {};
+  arr.forEach(q=>{
+    const m = MK.find(x=>x.c===q.symbol);
+    if(!m) return;
+    const p = cnbcNum(q.last), pc = cnbcNum(q.previous_day_closing);
+    if(!isNaN(p)) out[m.y] = { p: p, pc: isNaN(pc) ? p : pc };
+  });
+  return out;
+}
+let mkBusy = false;
+async function loadMarkets(){
+  if(mkBusy) return; mkBusy = true;
+  try{
+    const cached = getCache();
+    let merged = cached && cached.q ? Object.assign({}, cached.q) : {};
+    renderMarkets(merged, Object.keys(merged).length ? "顯示上次成功更新嘅報價，背景更新中…" : undefined);
+    const missing = ()=> MK.filter(m=>!merged[m.y]);
+    try{ const cq = await cnbcQuotes(); Object.assign(merged, cq); if(!missing().length) renderMarkets(merged); }
+    catch(e){ /* CNBC 唔得就用 Yahoo 補 */ }
+    for(let round=0; round<3 && missing().length; round++){
+      await Promise.all(missing().map(async m=>{
+        try{ const q = await yahooQuote(m.y); merged[m.y] = { p: q.price, pc: q.prev }; renderMarkets(merged); }
+        catch(e){ /* 下一輪再試 */ }
+      }));
+      if(missing().length && round<2) await new Promise(r=>setTimeout(r, 6000));
+    }
+    if(missing().length){
+      const fb = await stooqClose().catch(()=>({}));
+      MK.forEach(m=>{ if(!merged[m.y] && fb[m.s]) merged[m.y] = { p: fb[m.s], pc: fb[m.s] }; });
+    }
+    if(Object.keys(merged).length) setCache({ q: merged, t: Date.now() });
+    renderMarkets(merged);
+    stamp("#u-markets");
+  } finally { mkBusy = false; }
+}
+
+/* ---------- 載入器 ---------- */
+const LOADERS = { weather:loadWeather, fx:loadFX, holiday:async()=>loadHoliday(), markets:loadMarkets };
+const ERRBOX = { weather:"#c-weather", fx:"#c-fx", holiday:"#c-holiday", markets:"#c-markets" };
+async function refresh(key, btn){
+  if(btn) btn.classList.add("spin");
+  try{ await LOADERS[key](); }
+  catch(e){ const b = $(ERRBOX[key]); if(b && key!=="weather") b.innerHTML = '<div class="err">暫時攞唔到資料，陣間會自動再試。</div>';
+    if(key==="weather"){ $("#c-weather").innerHTML = '<div class="err">暫時攞唔到天氣資料，陣間會自動再試。</div>'; } }
+  if(btn) btn.classList.remove("spin");
+}
+function refreshAll(){ Object.keys(LOADERS).forEach(k=>refresh(k)); }
+document.querySelectorAll("[data-r]").forEach(b=> b.addEventListener("click", ()=>refresh(b.dataset.r, b)));
+setInterval(refreshAll, 60000);
+
+/* ---------- 設定面板 ---------- */
+const CARDNAMES = {weather:"今日天氣", forecast:"九日預報", fx:"港幣匯率", holiday:"假期倒數", sun:"日出日落", markets:"環球市場"};
+function segWire(id, get, set){
+  const box = $(id);
+  box.querySelectorAll("button").forEach(b=>{
+    b.classList.toggle("on", b.dataset.v===get());
+    b.addEventListener("click", ()=>{ set(b.dataset.v); save(); applyTheme(); tick();
+      box.querySelectorAll("button").forEach(x=>x.classList.toggle("on", x===b)); refreshAll(); });
+  });
+}
+function initSettings(){
+  $("#setName").value = S.name;
+  $("#setName").addEventListener("input", e=>{ S.name = e.target.value.trim(); save(); tick(); });
+  segWire("#setUnit", ()=>S.unit, v=>S.unit=v);
+  segWire("#setHour", ()=>S.hour, v=>S.hour=v);
+  segWire("#setTheme", ()=>S.theme, v=>S.theme=v);
+  const box = $("#setCards");
+  Object.keys(CARDNAMES).forEach(k=>{
+    const l = document.createElement("label");
+    l.innerHTML = '<input type="checkbox" '+(S.cards[k]?"checked":"")+"> "+CARDNAMES[k];
+    l.querySelector("input").addEventListener("change", e=>{ S.cards[k]=e.target.checked; save(); applyCards(); });
+    box.appendChild(l);
+  });
+  $("#gearBtn").addEventListener("click", ()=> $("#settingsPanel").classList.toggle("open"));
+  matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change", applyTheme);
+}
+
+applyTheme(); applyCards(); initSettings(); tick(); refreshAll();
+</script>
+</body>
+</html>
